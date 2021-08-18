@@ -12,38 +12,32 @@ const chart = {
     "owner": "xtzx_dg",
     "name": "你在“自主学习力”维度的得分：",
     "createdTime": "2021-01-02T22:01:25+08:00",
-    "type": "bar",
-    "subType": "bar-typical-y",
+    "type": "boxplot",
+    "subType": "boxplot-basic-y",
     "title": "",
-    "scopes": [
+    "scopes":  [
         {
             "id": 0,
             "type": "默认",
-            "range": "父母参与子女学习多",
-            "text": "四年级",
-            "askId": 395
-        },
-        {
-            "id": 0,
-            "range": "父母参与子女学习多",
-            "text": "八年级",
-            "askId": 395
-        },
-         {
-            "id": 0,
-            "type": "默认",
-            "range": "父母参与子女学习少",
-            "text": "四年级",
+            "range": "识记",
+            "text": "分数",
             "askId": 395
         },
         {
             "id": 0,
             "type": "默认",
-            "range": "父母参与子女学习少",
-            "text": "八年级",
+            "range": "理解",
+            "text": "分数",
             "askId": 395
-        }
-    ],
+        },
+        {
+            "id": 0,
+            "type": "默认",
+            "range": "运用",
+            "text": "分数",
+            "askId": 395
+        },
+        ],
     "options": [],
     "width": 750,
     "height": 300,

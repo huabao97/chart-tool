@@ -1,6 +1,7 @@
 import React from "react";
 import ReactEcharts from 'echarts-for-react';
 import * as Setting from "./Setting";
+import * as dataTool from "../node_modules/echarts/dist/extension/dataTool.js";
 
 function getScopeId(scope) {
   return scope.text;
@@ -146,6 +147,12 @@ export function isChartTypePieBasic(chart){
 export function isChartTypeBarTypical(chart){
   return chart.subType === "bar-typical-y" || chart.subType ==="bar-typical-x";
 }
+export function isChartTypeRadar(chart) {
+  return chart.subType==="radar-basic";
+}
+export function isChartTypeBoxplot(chart) {
+  return chart.subType === "boxplot-basic-y";
+}
 export function getChartOption(chart, data, isPdf) {
   const fontSize = chart.fontSize;
   const scopes = chart.scopes.filter(scope => scope.type !== "标记");
@@ -154,11 +161,15 @@ export function getChartOption(chart, data, isPdf) {
   let yData = [];
   let legendData = [];
   let series = [];
+   let isradar=false;
   let isY = false;
   let isPie=false;
 let nametext1=[];
   let nametext2=[];
   let index=[];
+  let radardata = [];
+  let indicatorData;
+  let indicatorname
   if (isChartTypeBarBasic(chart)) {
     const options = chart.scopes.map(scope => getScopeLabel(scope));
     isY = chart.subType === "bar-basic-y";
@@ -188,7 +199,33 @@ let nametext1=[];
         data: data,
       }
     );
-  }  else if (isChartTypePieBasic(chart)) {
+  }  else if(isChartTypeRadar(chart)){
+    const options = chart.scopes.map(scope => getScopeLabel(scope));
+    isradar = chart.subType === "radar-basic";//数值轴是y轴，isY=true
+    indicatorname = options;
+    indicatorname=Setting.SetDuplicateRemoval(indicatorname);
+    data = data.length !== 0 ? data.map(row => row[0]) : Setting.randomsBetween(0, 100, chart.scopes.length);
+    //ranges是雷达图的角点
+    nametext1=chart.scopes.map(scope => getScopeId(scope));
+    nametext2=Setting.SetDuplicateRemoval(nametext1);
+    legendData=nametext2;//雷达图的维度
+    indicatorData=Setting.getindicatorData(indicatorname);
+    legendData.forEach(value=>{
+      index=Setting.findall(nametext1,value);
+      var namedata=Setting.findvalue(data,index);
+    radardata.push(
+      {
+        value:namedata,
+        name:value,
+      }
+    );
+    series.push({
+      type:"radar",
+      data:radardata,
+    })
+  })
+ }
+  else if (isChartTypePieBasic(chart)) {
     const options = chart.scopes.map(scope => getScopeLabel(scope));
     isPie = chart.subType === "pie-basic";//数值轴是y轴，isY=true
     legendData = options;
@@ -219,7 +256,23 @@ let nametext1=[];
    if(chart.subType === "pie-ring"){
  series[0].radius=[50,140];
   }
-}else if(isChartTypeBarTypical(chart)){
+}else if (isChartTypeBoxplot(chart)) {
+    const options = chart.scopes.map((scope) => getScopeLabel(scope));
+    isY = chart.subType === "boxplot-basic-y";
+    yData = options;
+    //随机生成二维数组，二维数组长度为scope的长度，每个scope中的一维数组的长度为暂时未10
+    data =
+      data.length !== 0
+        ? data.map((row) => row[0])
+        : Setting.random2dArrayBetween(100, 500, chart.scopes.length);
+    // data = getDefaultData(chart, data);
+    data = dataTool.prepareBoxplotData(data);
+    series.push({
+      type: "boxplot",
+  data: data.boxData,
+    });
+  }
+else if(isChartTypeBarTypical(chart)){
   const options = chart.scopes.map(scope => getScopeLabel(scope));
   isY = chart.subType === "bar-typical-y";
   yData = options;
@@ -421,12 +474,15 @@ let nametext1=[];
     legend: {
       data: legendData,
       // top: "10%",
-      orient:!(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart))? "horizontal":"vertical",
-      x: !(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart))? "center":"right",
-      y: !(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart))? "bottom":"center",
+      orient:!(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart)||isChartTypeRadar(chart))? "horizontal":"vertical",
+      x: !(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart)||isChartTypeRadar(chart))? "center":"right",
+      y: !(isChartTypePieBasic(chart)||isChartTypeBarTypical(chart)||isChartTypeRadar(chart))? "bottom":"center",
     },
+    radar:!isChartTypeRadar(chart)?null: {indicator:indicatorData},
     xAxis: {
-      name: !isChartTypeBarBasic(chart) ? null : chart.scopes[0].text.split("").join("\n\n"),
+      name: !(isChartTypeBarBasic(chart)||isChartTypeBoxplot(chart))
+        ? null
+        : chart.scopes[0].text.split("").join("\n\n"),
       nameLocation: "middle",
       nameRotate: 0,
       nameGap: 50,
@@ -435,7 +491,7 @@ let nametext1=[];
       },
       axisLabel: {
         fontSize: fontSize,
-        formatter: (isChartTypeBarBasic(chart)||isChartTypeBarTypical(chart)) ? '{value}' : '{value}%',
+        formatter: (isChartTypeBarBasic(chart)||isChartTypeBarTypical(chart)||isChartTypeBoxplot(chart)) ? '{value}' : '{value}%',
       },
       axisTick: {
         show: false,
@@ -446,13 +502,15 @@ let nametext1=[];
         //   return param % 2 === 0;
         // }
       },
-      min: isChartTypeBarBasic(chart) ? 0 : 0,
-      max: isChartTypeBarBasic(chart) ? 5 : 100,
-      interval: isChartTypeBarBasic(chart) ? 1 : 10,
+      min: isChartTypeBarBasic(chart) ? 0 : (isChartTypeBoxplot(chart)?null:0),
+      max: isChartTypeBarBasic(chart) ? 5 : (isChartTypeBoxplot(chart)?null:100),
+      interval: isChartTypeBarBasic(chart) ? 1 : (isChartTypeBoxplot(chart)?50:10),
     },
     yAxis: [{
       data: yData,
-      inverse: isChartTypeBarY(chart) ? (chart.order === "down-right") : ((chart.order !== "down-right")),
+      inverse: (isChartTypeBarY(chart)||isChartTypeBoxplot(chart))
+          ? chart.order === "down-right"//从右到左
+          : chart.order !== "down-right",
       axisLabel: {
         show: true,
         fontSize: fontSize,
@@ -487,6 +545,9 @@ let nametext1=[];
   if (isY) {
     [option.xAxis, option.yAxis] = [option.yAxis, option.xAxis];
   }else if(isPie){
+    delete option.xAxis;
+    delete option.yAxis;
+  }else if(isradar){
     delete option.xAxis;
     delete option.yAxis;
   };

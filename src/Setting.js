@@ -10,6 +10,20 @@ export function randomsBetween(min, max, count) {
     }
     return res;
 }
+export function random2dArrayBetween(min,max,count) {   
+    let res = [];
+    for (let i = 0; i < count; i ++) {
+        res.push(randomsBetween(min,max,10));
+    }
+    return res;
+}
+export function randomsPercentageBetween(count){
+    let res = [];
+    for (let i=0; i<count; i++) {
+        res.push(Math.random()*100)
+    }
+    return res;
+}
 export function pieDataProcess(legendData, data) {
     let res = [];
     for (var i = 0; i < legendData.length; i++) {
@@ -30,6 +44,13 @@ export function transpose2dArray(array) {
         return array;
     }
     return array[0].map((r, i) => array.map(c => c[i]));
+}
+export function getindicatorData(indicatorname){
+  let res = [];
+  indicatorname.forEach(value => {
+      res.push({name: value,max:100});
+  });
+  return res;
 }
 export function SetDuplicateRemoval(arr){
     let set=new Set(arr);    
